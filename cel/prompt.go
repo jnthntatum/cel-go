@@ -23,15 +23,48 @@ import (
 	"github.com/google/cel-go/common"
 	"github.com/google/cel-go/common/operators"
 	"github.com/google/cel-go/common/overloads"
+	"github.com/google/cel-go/common/types"
 )
 
 //go:embed templates/authoring.tmpl
 var authoringPrompt string
 
+// splitImpl splits a string into a list of strings.
+//
+// Normalizes extracted comments (trim common prefix whitespace and extra trailing newlines).
+func splitImpl(str string) []string {
+	str = strings.TrimRight(str, " \n\t\r")
+	out := strings.Split(str, "\n")
+	if len(out) == 0 {
+		return nil
+	}
+	negative := strings.TrimLeft(out[0], " \t")
+	lenNegative := len(negative)
+	lenOut := len(out[0])
+	if lenNegative == lenOut {
+		return out
+	}
+	prefix := out[0][:lenOut-lenNegative]
+	trimmed := make([]string, len(out))
+	for i, line := range out {
+		if line == "" {
+			trimmed[i] = ""
+			continue
+		}
+		if !strings.HasPrefix(line, prefix) {
+			return out
+		}
+		trimmed[i] = strings.TrimPrefix(line, prefix)
+	}
+
+	return trimmed
+}
+
 // AuthoringPrompt creates a prompt template from a CEL environment for the purpose of AI-assisted authoring.
 func AuthoringPrompt(env *Env) (*Prompt, error) {
 	funcMap := template.FuncMap{
-		"split": func(str string) []string { return strings.Split(str, "\n") },
+		"split":          splitImpl,
+		"newlineToSpace": func(str string) string { return strings.ReplaceAll(str, "\n", " ") },
 	}
 	tmpl := template.New("cel").Funcs(funcMap)
 	tmpl, err := tmpl.Parse(authoringPrompt)
@@ -45,6 +78,17 @@ func AuthoringPrompt(env *Env) (*Prompt, error) {
 		tmpl:         tmpl,
 		env:          env,
 	}, nil
+}
+
+// AuthoringPrompt creates a prompt template from a CEL environment for the purpose of AI-assisted authoring.
+// Includes documentation for all of the reachable field paths in the environment.
+func AuthoringPromptWithFieldPaths(env *Env) (*Prompt, error) {
+	p, err := AuthoringPrompt(env)
+	if err != nil {
+		return nil, err
+	}
+	p.fieldPaths = true
+	return p, nil
 }
 
 // Prompt represents the core components of an LLM prompt based on a CEL environment.
@@ -64,6 +108,9 @@ type Prompt struct {
 	// tmpl is the text template base-configuration for rendering text.
 	tmpl *template.Template
 
+	// fieldPaths is a flag to enable including reachable field paths in the prompt.
+	fieldPaths bool
+
 	// env reference used to collect variables, functions, and macros available to the prompt.
 	env *Env
 }
@@ -72,6 +119,7 @@ type promptInst struct {
 	*Prompt
 
 	Variables  []*common.Doc
+	FieldPaths []*common.Doc
 	Macros     []*common.Doc
 	Functions  []*common.Doc
 	UserPrompt string
@@ -87,6 +135,20 @@ func (p *Prompt) Render(userPrompt string) string {
 	}
 	sort.SliceStable(vars, func(i, j int) bool {
 		return vars[i].Name < vars[j].Name
+	})
+	var fieldPaths []*common.Doc
+	if p.fieldPaths {
+		for _, v := range p.env.Variables() {
+			if v.Type().Kind() == types.StructKind {
+				paths := fieldPathsForType(p.env.CELTypeProvider(), v.Name(), v.Type())
+				for _, path := range paths {
+					fieldPaths = append(fieldPaths, path.Documentation())
+				}
+			}
+		}
+	}
+	sort.SliceStable(fieldPaths, func(i, j int) bool {
+		return fieldPaths[i].Name < fieldPaths[j].Name
 	})
 	macs := make([]*common.Doc, len(p.env.Macros()))
 	for i, m := range p.env.Macros() {
@@ -105,6 +167,7 @@ func (p *Prompt) Render(userPrompt string) string {
 	inst := &promptInst{
 		Prompt:     p,
 		Variables:  vars,
+		FieldPaths: fieldPaths,
 		Macros:     macs,
 		Functions:  funcs,
 		UserPrompt: userPrompt}

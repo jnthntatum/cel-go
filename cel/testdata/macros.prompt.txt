@@ -13,7 +13,7 @@ Only use the following variables, macros, and functions in expressions.
 
 Macros:
 
-* has macro - check a protocol buffer message for the presence of a field, or check a map for the presence of a string key. Only map accesses using the select notation are supported. 
+* has macro - check a protocol buffer message for the presence of a field, or check a map for the presence of a string key. Only map accesses using the select notation are supported.
 
       // true if the 'address' field exists in the 'user' message
       has(user.address)
@@ -22,7 +22,7 @@ Macros:
       // test whether the 'id' field is set to a non-default value on the Expr{} message literal
       has(Expr{}.id) // false
 
-* all macro - tests whether all elements in the input list or all keys in a map satisfy the given predicate. The all macro behaves in a manner consistent with the Logical AND operator including in how it absorbs errors and short-circuits. 
+* all macro - tests whether all elements in the input list or all keys in a map satisfy the given predicate. The all macro behaves in a manner consistent with the Logical AND operator including in how it absorbs errors and short-circuits.
 
       [1, 2, 3].all(x, x > 0) // true
       [1, 2, 0].all(x, x > 0) // false
@@ -32,7 +32,7 @@ Macros:
       // an empty list or map as the range will result in a trivially true result
       [].all(x, x > 0) // true
 
-* exists macro - tests whether any value in the list or any key in the map satisfies the predicate expression. The exists macro behaves in a manner consistent with the Logical OR operator including in how it absorbs errors and short-circuits. 
+* exists macro - tests whether any value in the list or any key in the map satisfies the predicate expression. The exists macro behaves in a manner consistent with the Logical OR operator including in how it absorbs errors and short-circuits.
 
       [1, 2, 3].exists(i, i % 2 != 0) // true
       [0, -1, 5].exists(num, num < 0) // true
@@ -44,7 +44,7 @@ Macros:
       // tokens = {'sub': 'me', 'iss': 'https://issuer.cel.dev'}
       tokens.exists(k, k == 'iss' && tokens[k].contains('cel.dev'))
 
-* exists_one macro - tests whether exactly one list element or map key satisfies the predicate expression. This macro does not short-circuit in order to remain consistent with logical operators being the only operators which can absorb errors within CEL. 
+* exists_one macro - tests whether exactly one list element or map key satisfies the predicate expression. This macro does not short-circuit in order to remain consistent with logical operators being the only operators which can absorb errors within CEL.
 
       [1, 2, 2].exists_one(i, i < 2) // true
       {'a': 'hello', 'aa': 'hellohello'}.exists_one(k, k.startsWith('a')) // false
@@ -52,7 +52,7 @@ Macros:
       // ensure exactly one key in the map ends in @acme.co
       {'wiley@acme.co': 'coyote', 'aa@milne.co': 'bear'}.exists_one(k, k.endsWith('@acme.co')) // true
 
-* map macro - the three-argument form of map transforms all elements in the input range. 
+* map macro - the three-argument form of map transforms all elements in the input range.
 
       [1, 2, 3].map(x, x * 2) // [2, 4, 6]
       [5, 10, 15].map(x, x / 5) // [1, 2, 3]
@@ -61,12 +61,12 @@ Macros:
       {'hi': 'you', 'howzit': 'bruv'}.map(k,
           k + ":" + {'hi': 'you', 'howzit': 'bruv'}[k]) // ['hi:you', 'howzit:bruv']
 
-* map macro - the four-argument form of the map transforms only elements which satisfy the predicate which is equivalent to chaining the filter and three-argument map macros together. 
+* map macro - the four-argument form of the map transforms only elements which satisfy the predicate which is equivalent to chaining the filter and three-argument map macros together.
 
       // multiply only numbers divisible two, by 2
       [1, 2, 3, 4].map(num, num % 2 == 0, num * 2) // [4, 8]
 
-* filter macro - returns a list containing only the elements from the input list that satisfy the given predicate 
+* filter macro - returns a list containing only the elements from the input list that satisfy the given predicate
 
       [1, 2, 3].filter(x, x > 1) // [2, 3]
       ['cat', 'dog', 'bird', 'fish'].filter(pet, pet.size() == 3) // ['cat', 'dog']

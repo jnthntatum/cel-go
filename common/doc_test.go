@@ -133,6 +133,18 @@ func TestNewDoc(t *testing.T) {
 			desc:       "get the JWT token from a request\nas deserialized JSON",
 			childCount: 1,
 		},
+		{
+			newDoc: func() *Doc {
+				return NewFieldDoc("google.rpc.context.AttributeContext.Request.token", "string",
+					"The HTTP URL scheme, such as `http` and `https`.",
+					NewExampleDoc("\"https\""))
+			},
+			kind:       DocField,
+			name:       "google.rpc.context.AttributeContext.Request.token",
+			celType:    "string",
+			desc:       "The HTTP URL scheme, such as `http` and `https`.",
+			childCount: 1,
+		},
 	}
 
 	for _, tst := range tests {

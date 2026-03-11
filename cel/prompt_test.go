@@ -16,10 +16,14 @@ package cel
 
 import (
 	_ "embed"
+	"sync"
 	"testing"
 
 	"github.com/google/cel-go/common/env"
-	"github.com/google/cel-go/test"
+	"github.com/google/go-cmp/cmp"
+
+	"google.golang.org/protobuf/proto"
+	dpb "google.golang.org/protobuf/types/descriptorpb"
 )
 
 //go:embed testdata/basic.prompt.txt
@@ -30,6 +34,26 @@ var wantMacrosPrompt string
 
 //go:embed testdata/standard_env.prompt.txt
 var wantStandardEnvPrompt string
+
+//go:embed testdata/field_paths.prompt.txt
+var wantFieldPathsPrompt string
+
+//go:embed testdata/test_fds_with_source_info-transitive-descriptor-set-source-info.proto.bin
+var testFdsWithSourceInfo []byte
+
+var onceFds sync.Once
+var fds *dpb.FileDescriptorSet
+
+func testFds(t *testing.T) *dpb.FileDescriptorSet {
+	onceFds.Do(func() {
+		fds = &dpb.FileDescriptorSet{}
+		err := proto.Unmarshal(testFdsWithSourceInfo, fds)
+		if err != nil {
+			t.Fatalf("failed to unmarshal testFdsWithSourceInfo: %v", err)
+		}
+	})
+	return fds
+}
 
 func TestPromptTemplate(t *testing.T) {
 	tests := []struct {
@@ -56,7 +80,11 @@ func TestPromptTemplate(t *testing.T) {
 	for _, tst := range tests {
 		tc := tst
 		t.Run(tc.name, func(t *testing.T) {
-			env, err := NewCustomEnv(tc.envOpts...)
+			envOpts := append([]EnvOption{TypeDescs(testFds(t))}, tc.envOpts...)
+
+			env, err := NewCustomEnv(
+				envOpts...,
+			)
 			if err != nil {
 				t.Fatalf("cel.NewCustomEnv() failed: %v", err)
 			}
@@ -65,8 +93,47 @@ func TestPromptTemplate(t *testing.T) {
 				t.Fatalf("cel.AuthoringPrompt() failed: %v", err)
 			}
 			out := prompt.Render("<USER_PROMPT>")
-			if !test.Compare(out, tc.out) {
-				t.Errorf("got %s, wanted %s", out, tc.out)
+			if diff := cmp.Diff(tc.out, out); diff != "" {
+				t.Errorf("got %s, diff (-want +got): %s", out, diff)
+			}
+		})
+	}
+}
+
+func TestPromptTemplateFieldPaths(t *testing.T) {
+	tests := []struct {
+		name    string
+		envOpts []EnvOption
+		out     string
+	}{
+		{
+			name: "standard_env",
+			envOpts: []EnvOption{
+				Variable("team", ObjectType("cel.testdata.Team")),
+				StdLib(StdLibSubset(env.NewLibrarySubset().SetDisableMacros(true))),
+			},
+			out: wantFieldPathsPrompt,
+		},
+	}
+
+	for _, tst := range tests {
+		tc := tst
+		t.Run(tc.name, func(t *testing.T) {
+			envOpts := append([]EnvOption{TypeDescs(testFds(t))}, tc.envOpts...)
+
+			env, err := NewCustomEnv(
+				envOpts...,
+			)
+			if err != nil {
+				t.Fatalf("cel.NewCustomEnv() failed: %v", err)
+			}
+			prompt, err := AuthoringPromptWithFieldPaths(env)
+			if err != nil {
+				t.Fatalf("cel.AuthoringPromptWithFieldPaths() failed: %v", err)
+			}
+			out := prompt.Render("<USER_PROMPT>")
+			if diff := cmp.Diff(tc.out, out); diff != "" {
+				t.Errorf("got %s, diff (-want +got): %s", out, diff)
 			}
 		})
 	}

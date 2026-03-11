@@ -21,3 +21,8 @@ filegroup(
     name = "prompts",
     srcs = glob(["*.prompt.txt"]),
 )
+
+exports_files(
+    ["test_fds_with_source_info-transitive-descriptor-set-source-info.proto.bin"],
+    visibility = ["//cel:__subpackages__"],
+)

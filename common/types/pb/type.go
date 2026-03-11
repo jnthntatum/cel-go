@@ -239,6 +239,14 @@ func (fd *FieldDescription) Descriptor() protoreflect.FieldDescriptor {
 	return fd.desc
 }
 
+// Documentation returns the documentation for the field.
+func (fd *FieldDescription) Documentation() string {
+	if parentFile := fd.desc.ParentFile(); parentFile != nil {
+		return parentFile.SourceLocations().ByDescriptor(fd.desc).LeadingComments
+	}
+	return ""
+}
+
 // IsSet returns whether the field is set on the target value, per the proto presence conventions
 // of proto2 or proto3 accordingly.
 //

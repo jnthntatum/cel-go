@@ -1,3 +1,6 @@
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("//bazel:proto_source_info.bzl", "source_info_proto_descriptor_set")
+
 package(
     default_visibility = ["//visibility:public"],
     licenses = ["notice"],  # Apache 2.0
@@ -22,7 +25,26 @@ filegroup(
     srcs = glob(["*.prompt.txt"]),
 )
 
-exports_files(
-    ["test_fds_with_source_info-transitive-descriptor-set-source-info.proto.bin"],
-    visibility = ["//cel:__subpackages__"],
+proto_library(
+    name = "mutant_proto",
+    srcs = ["mutant.proto"],
+)
+
+proto_library(
+    name = "team_proto",
+    srcs = ["team.proto"],
+    deps = [":mutant_proto"],
+)
+
+source_info_proto_descriptor_set(
+    name = "test_fds_with_source_info",
+    proto_libs = [
+        ":mutant_proto",
+        ":team_proto",
+    ],
+)
+
+source_info_proto_descriptor_set(
+    name = "test_all_types_fds",
+    proto_libs = ["@dev_cel_expr//proto/cel/expr/conformance/proto3:test_all_types_proto"],
 )

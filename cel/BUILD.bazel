@@ -81,7 +81,7 @@ go_test(
     ],
     embedsrcs = [
         "//cel/testdata:prompts",
-        "//cel/testdata:test_fds_with_source_info-transitive-descriptor-set-source-info.proto.bin",
+        "//cel/testdata:test_fds_with_source_info",
     ],
     deps = [
         "//common/operators:go_default_library",

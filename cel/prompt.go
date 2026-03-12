@@ -115,11 +115,15 @@ type Prompt struct {
 	env *Env
 }
 
+type promptVariable struct {
+	*common.Doc
+	FieldPaths []*common.Doc
+}
+
 type promptInst struct {
 	*Prompt
 
-	Variables  []*common.Doc
-	FieldPaths []*common.Doc
+	Variables  []*promptVariable
 	Macros     []*common.Doc
 	Functions  []*common.Doc
 	UserPrompt string
@@ -129,26 +133,31 @@ type promptInst struct {
 // for use with LLM generators.
 func (p *Prompt) Render(userPrompt string) string {
 	var buffer strings.Builder
-	vars := make([]*common.Doc, len(p.env.Variables()))
+	vars := make([]*promptVariable, len(p.env.Variables()))
 	for i, v := range p.env.Variables() {
-		vars[i] = v.Documentation()
+		vars[i] = &promptVariable{Doc: v.Documentation()}
+		if p.fieldPaths && v.Type().Kind() == types.StructKind {
+			var fieldPaths []*common.Doc
+
+			paths := fieldPathsForType(p.env.CELTypeProvider(), v.Name(), v.Type())
+			if len(paths) < 2 {
+				paths = nil
+			} else {
+				// First path is the variable which is already documented.
+				paths = paths[1:]
+			}
+			for _, path := range paths {
+				fieldPaths = append(fieldPaths, path.Documentation())
+			}
+
+			sort.SliceStable(fieldPaths, func(i, j int) bool {
+				return fieldPaths[i].Name < fieldPaths[j].Name
+			})
+			vars[i].FieldPaths = fieldPaths
+		}
 	}
 	sort.SliceStable(vars, func(i, j int) bool {
 		return vars[i].Name < vars[j].Name
-	})
-	var fieldPaths []*common.Doc
-	if p.fieldPaths {
-		for _, v := range p.env.Variables() {
-			if v.Type().Kind() == types.StructKind {
-				paths := fieldPathsForType(p.env.CELTypeProvider(), v.Name(), v.Type())
-				for _, path := range paths {
-					fieldPaths = append(fieldPaths, path.Documentation())
-				}
-			}
-		}
-	}
-	sort.SliceStable(fieldPaths, func(i, j int) bool {
-		return fieldPaths[i].Name < fieldPaths[j].Name
 	})
 	macs := make([]*common.Doc, len(p.env.Macros()))
 	for i, m := range p.env.Macros() {
@@ -167,7 +176,6 @@ func (p *Prompt) Render(userPrompt string) string {
 	inst := &promptInst{
 		Prompt:     p,
 		Variables:  vars,
-		FieldPaths: fieldPaths,
 		Macros:     macs,
 		Functions:  funcs,
 		UserPrompt: userPrompt}

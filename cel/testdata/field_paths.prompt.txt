@@ -13,33 +13,39 @@ Only use the following variables, macros, and functions in expressions.
 
 Variables:
 
-* team is a cel.testdata.Team
+* name: `team`
+  type: `cel.testdata.Team`
+  description:
+    A team of gifted youngsters
 
-Field Paths:
+  attributes:
+    * path: `team.members`
+      type: `list(cel.testdata.Mutant)`
+      description:
+        The members of the team.
 
-* team is a cel.testdata.Team
-* team.members is a list(cel.testdata.Mutant)
+    * path: `team.members[0].level`
+      type: `int`
+      description:
+        The level of the mutant.
+        Values from 1 to 10.
 
-      The members of the team.
+    * path: `team.members[0].name`
+      type: `string`
+      description:
+        The display name of the mutant.
 
-* team.members[0].level is a int
+    * path: `team.members[0].super_power`
+      type: `string`
+      description:
+        The super power of the mutant.
+        Matches the IDs in Foo.db.
 
-      The level of the mutant.
-      Values from 1 to 10.
-
-* team.members[0].name is a string
-
-      The display name of the mutant.
-
-* team.members[0].super_power is a string
-
-      The super power of the mutant.
-      Matches the IDs in Foo.db.
-
-* team.name is a string
-
-      The name of the team.
-      Formated as 'team_<8_digit_hex_number>'.
+    * path: `team.name`
+      type: `string`
+      description:
+        The name of the team.
+        Formated as 'team_<8_digit_hex_number>'.
 
 
 Functions:

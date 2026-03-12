@@ -1,7 +1,24 @@
-{{define "variable"}}{{.Name}} is a {{.Type}}{{if .Description}}
-
-{{range split .Description}}      {{.}}
+{{define "fieldPath" }}
+    * path: `{{.Name}}`
+      type: `{{.Type}}`
+      {{- if .Description }}
+      description:
+{{range split .Description }}        {{.}}
 {{end}}
+{{- end -}}
+{{- end -}}
+
+{{define "variable" -}}
+* name: `{{.Name}}`
+  type: `{{.Type}}`
+  {{- if .Description}}
+  description:
+{{range split .Description}}    {{.}}
+{{end -}}
+{{- end -}}
+{{- if .FieldPaths }}
+  attributes:
+{{- range .FieldPaths }}{{ template "fieldPath" . }}{{end}}
 {{- end -}}
 {{- end -}}
 
@@ -27,14 +44,6 @@
 {{range .Children}}{{template "overload" .}}{{end}}
 {{- end -}}
 
-{{define "fieldPath" -}}
-{{.Name}} is a {{.Type}}
-{{if .Description}}
-{{range split .Description}}      {{.}}
-{{ end }}
-{{ end -}}
-{{- end -}}
-
 {{.Persona}}
 
 {{.FormatRules}}
@@ -44,15 +53,9 @@ Only use the following variables, macros, and functions in expressions.
 {{if .Variables}}
 Variables:
 
-{{range .Variables}}* {{template "variable" .}}
+{{range .Variables -}}
+{{template "variable" .}}
 {{end -}}
-{{end -}}
-
-{{if .FieldPaths}}
-Field Paths:
-
-{{range .FieldPaths}}* {{template "fieldPath" .}}
-{{- end -}}
 {{- end -}}
 
 {{if .Macros}}

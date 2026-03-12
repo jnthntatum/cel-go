@@ -18,9 +18,6 @@ func TestFieldPathsForTestAllTypes(t *testing.T) {
 	p := env.CELTypeProvider()
 
 	paths := fieldPathsForType(p, "t", ObjectType("cel.expr.conformance.proto3.NestedTestAllTypes"))
-	if err != nil {
-		t.Fatalf("fieldPathsForType() failed: %v", err)
-	}
 	pathStrings := make([]string, 0, len(paths))
 	for i, path := range paths {
 		t.Logf("path %d: %v", i, path.path)

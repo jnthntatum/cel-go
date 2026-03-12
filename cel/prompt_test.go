@@ -19,6 +19,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/cel-go/common"
 	"github.com/google/cel-go/common/env"
 	"github.com/google/go-cmp/cmp"
 
@@ -109,7 +110,8 @@ func TestPromptTemplateFieldPaths(t *testing.T) {
 		{
 			name: "standard_env",
 			envOpts: []EnvOption{
-				Variable("team", ObjectType("cel.testdata.Team")),
+				VariableWithDoc("team", ObjectType("cel.testdata.Team"),
+					common.MultilineDescription("A team of gifted youngsters")),
 				StdLib(StdLibSubset(env.NewLibrarySubset().SetDisableMacros(true))),
 			},
 			out: wantFieldPathsPrompt,

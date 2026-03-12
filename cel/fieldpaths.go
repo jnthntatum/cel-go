@@ -17,6 +17,7 @@ type fieldPath struct {
 	isLeaf      bool
 }
 
+// Documentation implements the Documentor interface.
 func (f *fieldPath) Documentation() *common.Doc {
 	return common.NewFieldDoc(f.path, f.celType.String(), f.description)
 }

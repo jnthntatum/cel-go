@@ -22,6 +22,12 @@ func (f *fieldPath) Documentation() *common.Doc {
 	return common.NewFieldDoc(f.path, f.celType.String(), f.description)
 }
 
+type documentationProvider interface {
+	// FindStructFieldDescription returns documentation for a field if available.
+	// Returns false if the field could not be found.
+	FindStructFieldDescription(typeName, fieldName string) (string, bool)
+}
+
 type backtrack struct {
 	// provider used to resolve types.
 	provider types.Provider
@@ -79,10 +85,14 @@ func (b *backtrack) expandFieldPaths(celType *Type, paths []*fieldPath) []*field
 				continue
 			}
 			b.push(field, celType)
+			description := ""
+			if docProvider, ok := b.provider.(documentationProvider); ok {
+				description, _ = docProvider.FindStructFieldDescription(celType.String(), field)
+			}
 			path := &fieldPath{
 				celType:     fieldType.Type,
 				path:        formatPath(b.path),
-				description: fieldType.Description,
+				description: description,
 				isLeaf:      false,
 			}
 			paths = append(paths, path)

@@ -269,6 +269,20 @@ func (p *Registry) FindStructFieldType(structType, fieldName string) (*FieldType
 	}, true
 }
 
+// FindStructFieldDescription returns documentation for a field if available.
+// Returns false if the field could not be found.
+func (p *Registry) FindStructFieldDescription(structType, fieldName string) (string, bool) {
+	msgType, found := p.pbdb.DescribeType(structType)
+	if !found {
+		return "", false
+	}
+	field, found := msgType.FieldByName(fieldName)
+	if !found {
+		return "", false
+	}
+	return field.Documentation(), true
+}
+
 // FindIdent takes a qualified identifier name and returns a ref.Val if one exists.
 func (p *Registry) FindIdent(identName string) (ref.Val, bool) {
 	if t, found := p.revTypeMap[identName]; found {

@@ -80,7 +80,7 @@ func AuthoringPrompt(env *Env) (*Prompt, error) {
 	}, nil
 }
 
-// AuthoringPrompt creates a prompt template from a CEL environment for the purpose of AI-assisted authoring.
+// AuthoringPromptWithFieldPaths creates a prompt template from a CEL environment for the purpose of AI-assisted authoring.
 // Includes documentation for all of the reachable field paths in the environment.
 func AuthoringPromptWithFieldPaths(env *Env) (*Prompt, error) {
 	p, err := AuthoringPrompt(env)

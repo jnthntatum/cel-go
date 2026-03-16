@@ -18,11 +18,6 @@ func TestFieldPathsForTestAllTypes(t *testing.T) {
 	p := env.CELTypeProvider()
 
 	paths := fieldPathsForType(p, "t", ObjectType("cel.expr.conformance.proto3.NestedTestAllTypes"))
-	pathStrings := make([]string, 0, len(paths))
-	for i, path := range paths {
-		t.Logf("path %d: %v", i, path.path)
-		pathStrings = append(pathStrings, path.path)
-	}
 
 	tcs := []struct {
 		path     string

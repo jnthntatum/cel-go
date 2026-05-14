@@ -266,10 +266,10 @@ func (c *checker) checkCall(e ast.Expr) {
 		c.checkOptSelect(e)
 		return
 	}
-	if fnName == "cel.@block" {
-		c.checkCelBlock(e)
-		return
-	}
+	// if fnName == "cel.@block" {
+	// 	c.checkCelBlock(e)
+	// 	return
+	// }
 
 	args := call.Args()
 	// Traverse arguments.

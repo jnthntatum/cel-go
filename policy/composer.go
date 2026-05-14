@@ -269,11 +269,11 @@ func (opt *ruleUnnesterImpl) Optimize(ctx *cel.OptimizerContext, a *ast.AST) *as
 		varExprs = make([]ast.Expr, vars.Size())
 		varDecls = make([]cel.EnvOption, vars.Size())
 		copy(varExprs, vars.Elements())
-		for i, v := range varExprs {
+		for i, _ := range varExprs {
 			// Track the variable he varDecls set.
 			indexVar := fmt.Sprintf("@index%d", i)
-			celType := a.GetType(v.ID())
-			varDecls[i] = cel.Variable(indexVar, celType)
+			// celType := a.GetType(v.ID())
+			varDecls[i] = cel.Variable(indexVar, types.DynType)
 			opt.nextVarIndex++
 		}
 	}

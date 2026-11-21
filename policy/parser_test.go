@@ -16,6 +16,7 @@ package policy
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"cel.dev/cel-go/cel"
@@ -458,4 +459,41 @@ func TestPolicyAndRuleSemanticMethods(t *testing.T) {
 	if r.Semantic() != aggregate {
 		t.Errorf("got %v, wanted aggregate after conflicting SetSemantic", r.Semantic())
 	}
+}
+
+func TestParserNilSafety(t *testing.T) {
+	t.Run("nil_custom_tag_visitor", func(t *testing.T) {
+		_, err := NewParser(CustomTagVisitor(nil))
+		if err == nil || !strings.Contains(err.Error(), "tag visitor cannot be nil") {
+			t.Errorf("NewParser(CustomTagVisitor(nil)) got %v, wanted 'tag visitor cannot be nil'", err)
+		}
+	})
+
+	t.Run("nil_source", func(t *testing.T) {
+		p, err := NewParser()
+		if err != nil {
+			t.Fatalf("NewParser() failed: %v", err)
+		}
+		_, iss := p.Parse(nil)
+		if iss.Err() == nil || !strings.Contains(iss.Err().Error(), "source cannot be nil") {
+			t.Errorf("Parse(nil) got %v, wanted 'source cannot be nil'", iss.Err())
+		}
+	})
+
+	t.Run("zero_value_policy_and_nil_match_helpers", func(t *testing.T) {
+		zeroPolicy := &Policy{}
+		zeroPolicy.SetMetadata("k", "v")
+		if v, ok := zeroPolicy.Metadata("k"); !ok || v != "v" {
+			t.Errorf("zeroPolicy.Metadata('k') = (%v, %v), want ('v', true)", v, ok)
+		}
+
+		p := NewPolicy(nil, nil)
+		r := NewRule(1)
+		r.AddMatch(nil)
+		p.SetRule(r)
+		ep := p.GetExplanationOutputPolicy()
+		if ep == nil || ep.Rule() == nil || len(ep.Rule().Matches()) != 0 {
+			t.Errorf("GetExplanationOutputPolicy() with nil match got %v, want 0 matches", ep)
+		}
+	})
 }

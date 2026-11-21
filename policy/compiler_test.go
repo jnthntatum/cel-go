@@ -997,4 +997,33 @@ func TestCompileRuleValidation(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("nil_import", func(t *testing.T) {
+		p := NewPolicy(nil, nil)
+		p.AddImport(nil)
+		r := NewRule(1)
+		m := NewMatch(2)
+		m.SetCondition(ValueString{ID: 3, Value: "true"})
+		m.SetOutput(ValueString{ID: 4, Value: "true"})
+		r.AddMatch(m)
+		p.SetRule(r)
+		_, iss := Compile(env, p)
+		if iss.Err() == nil || !strings.Contains(iss.Err().Error(), "import cannot be nil") {
+			t.Errorf("Compile() with nil import got %v, wanted 'import cannot be nil'", iss.Err())
+		}
+	})
+
+	t.Run("nil_compile_match_output_option", func(t *testing.T) {
+		p := NewPolicy(nil, nil)
+		r := NewRule(1)
+		m := NewMatch(2)
+		m.SetCondition(ValueString{ID: 3, Value: "true"})
+		m.SetOutput(ValueString{ID: 4, Value: "true"})
+		r.AddMatch(m)
+		p.SetRule(r)
+		_, iss := Compile(env, p, CompileMatchOutput(nil))
+		if iss.Err() == nil || !strings.Contains(iss.Err().Error(), "match output compiler function cannot be nil") {
+			t.Errorf("Compile() with CompileMatchOutput(nil) got %v, wanted 'match output compiler function cannot be nil'", iss.Err())
+		}
+	})
 }

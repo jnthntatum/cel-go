@@ -252,6 +252,9 @@ type CompileMatchOutputFunc func(mc MatchCompiler, m *Match, p *Policy) (*cel.As
 // CompileMatchOutput sets a custom match output compiling function.
 func CompileMatchOutput(f CompileMatchOutputFunc) CompilerOption {
 	return func(c *compiler) error {
+		if f == nil {
+			return fmt.Errorf("match output compiler function cannot be nil")
+		}
 		c.compileMatchOutput = f
 		return nil
 	}
@@ -318,6 +321,10 @@ func CompileRule(env *cel.Env, p *Policy, opts ...CompilerOption) (*CompiledRule
 	if importCount > 0 {
 		importNames := make([]string, 0, importCount)
 		for _, imp := range p.Imports() {
+			if imp == nil {
+				iss.ReportErrorAtID(p.Name().ID, "import cannot be nil")
+				continue
+			}
 			typeName := imp.Name().Value
 			_, err := containers.NewContainer(containers.Abbrevs(typeName))
 			if err != nil {
@@ -329,7 +336,7 @@ func CompileRule(env *cel.Env, p *Policy, opts ...CompilerOption) (*CompiledRule
 		env, err := c.env.Extend(cel.Abbrevs(importNames...))
 		if err != nil {
 			// validation happens earlier in the sequence, so this should be unreachable.
-			iss.ReportErrorAtID(p.Imports()[0].SourceID(), "error configuring imports: %s", err)
+			iss.ReportErrorAtID(p.Name().ID, "error configuring imports: %s", err)
 		} else {
 			c.env = env
 		}

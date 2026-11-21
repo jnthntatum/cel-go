@@ -142,6 +142,9 @@ func (p *Policy) SetRule(r *Rule) {
 
 // SetMetadata updates a named metadata key with the given value.
 func (p *Policy) SetMetadata(name string, value any) {
+	if p.metadata == nil {
+		p.metadata = map[string]any{}
+	}
 	p.metadata[name] = value
 }
 
@@ -295,6 +298,9 @@ func (r *Rule) getExplanationOutputRule() *Rule {
 	}
 	er.AddVariables(r.Variables())
 	for _, match := range r.matches {
+		if match == nil {
+			continue
+		}
 		em := Match{
 			condition: match.condition,
 			output:    match.explanation,
@@ -548,6 +554,9 @@ func SimpleVariables() ParserOption {
 // CustomTagVisitor configures the parser to use the given TagVisitor for handling custom tags.
 func CustomTagVisitor(visitor TagVisitor) ParserOption {
 	return func(p *Parser) (*Parser, error) {
+		if visitor == nil {
+			return nil, fmt.Errorf("tag visitor cannot be nil")
+		}
 		p.TagVisitor = visitor
 		return p, nil
 	}
@@ -571,6 +580,11 @@ func NewParser(opts ...ParserOption) (*Parser, error) {
 // where they occur within the file, thus making error messages relative to the whole
 // file rather than the individual expression.
 func (parser *Parser) Parse(src *Source) (*Policy, *cel.Issues) {
+	if src == nil {
+		errs := common.NewErrors(common.NewTextSource(""))
+		errs.ReportErrorString(common.NoLocation, "source cannot be nil")
+		return nil, cel.NewIssues(errs)
+	}
 	info := ast.NewSourceInfo(src)
 	errs := common.NewErrors(src)
 	iss := cel.NewIssuesWithSourceInfo(errs, info)
